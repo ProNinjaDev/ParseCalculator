@@ -17,6 +17,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ParseStringCalculator\ParseStringCalculator.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="ParseCalculator">
+      <HintPath>..\ParseCalculator\bin\Debug\net8.0\ParseCalculator.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
 
