@@ -93,7 +93,7 @@ namespace ParseStringCalculator
                 else if (c == ')')
                 {
                     while (stack.Count > 0 && stack.Peek() != '(')
-                        postfixExpression += stack.Pop();
+                        postfixExpression += stack.Pop() + " ";
                     stack.Pop();
                 }
                 else if (operationPriority.ContainsKey(c))
@@ -104,13 +104,13 @@ namespace ParseStringCalculator
                         op = '~';
 
                     while (stack.Count > 0 && operationPriority[stack.Peek()] >= operationPriority[op])
-                        postfixExpression += stack.Pop();
+                        postfixExpression += stack.Pop() + " ";
                     stack.Push(op);
                 }
             }
 
             foreach (char op in stack)
-                postfixExpression += op;
+                postfixExpression += op + " ";
 
             return postfixExpression;
         }
