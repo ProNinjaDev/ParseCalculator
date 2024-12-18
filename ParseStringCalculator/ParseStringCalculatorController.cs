@@ -24,9 +24,6 @@ namespace ParseStringCalculator
             { '~', 4 }
         };
 
-        public string PostfixExpression1 { get => PostfixExpression2; set => PostfixExpression2 = value; }
-        public string PostfixExpression2 { get => PostfixExpression; set => PostfixExpression = value; }
-
         public string Calculate()
         {
             string postfixExpression = ToPostfix(expression + "\r");
@@ -82,7 +79,7 @@ namespace ParseStringCalculator
             {
                 char c = infixExpression[i];
 
-                if (char.IsDigit(c))
+                if (char.IsDigit(c) || c == ',')
                 {
                     postfixExpression += GetStringNumber(infixExpression, ref i) + " ";
                 }
@@ -112,19 +109,20 @@ namespace ParseStringCalculator
             foreach (char op in stack)
                 postfixExpression += op + " ";
 
-            return postfixExpression;
+            Console.WriteLine($"Postfix Expression: {postfixExpression.Trim()}");
+            return postfixExpression.Trim();
         }
 
         private string GetStringNumber(string infixExpression, ref int i)
         {
-            string strNumber = "";
+            StringBuilder strNumber = new();
 
             for (; i < infixExpression.Length; i++)
             {
                 char num = infixExpression[i];
 
-                if (char.IsDigit(num))
-                    strNumber += num;
+                if (char.IsDigit(num) || num == ',')
+                    strNumber.Append(num);
                 else
                 {
                     i--;
@@ -132,7 +130,7 @@ namespace ParseStringCalculator
                 }
             }
 
-            return strNumber;
+            return strNumber.ToString();
         }
     }
 }
