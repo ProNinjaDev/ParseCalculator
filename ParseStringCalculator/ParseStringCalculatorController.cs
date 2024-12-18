@@ -81,6 +81,8 @@ namespace ParseStringCalculator
             StringBuilder postfixExpression = new();
             Stack<char> stack = new();
 
+            bool lockOperator = true;
+
             for (int i = 0; i < infixExpression.Length; i++)
             {
                 char c = infixExpression[i];
@@ -89,20 +91,35 @@ namespace ParseStringCalculator
                 {
                     case char digit when (char.IsDigit(digit) || digit == ','):
                         ProcessDigitOrComma(infixExpression, postfixExpression, ref i);
+                        if (i + 1 < infixExpression.Length && infixExpression[i + 1] == '(' && digit != ',')
+                        {
+                            ProcessOperator(infixExpression, postfixExpression, stack, ref i, '*');
+                        }
+                        lockOperator = false;
                         break;
                     case '(':
                         ProcessOpeningParenthesis(stack);
+                        lockOperator = true;
                         break;
                     case ')':
                         ProcessClosingParenthesis(postfixExpression, stack);
+                        if (i + 1 < infixExpression.Length && infixExpression[i + 1] == '(')
+                        {
+                            ProcessOperator(infixExpression, postfixExpression, stack, ref i, '*');
+                        }
+                        lockOperator = false;
                         break;
                     case char op when OperationPriority.ContainsKey(op):
+                        if (lockOperator && op != '-')
+                            throw new ArgumentException($"Некорректный оператор: {c}");
+
                         ProcessOperator(infixExpression, postfixExpression, stack, ref i, c);
+                        lockOperator = true;
                         break;
                     case char whiteSpace when char.IsWhiteSpace(whiteSpace):
                         break;
                     default:
-                        throw new ArgumentException($"Unexpected character: {c}");
+                        throw new ArgumentException($"Некорректный символ: {c}");
                 }
             }
 
@@ -126,6 +143,13 @@ namespace ParseStringCalculator
 
         private void ProcessClosingParenthesis(StringBuilder postfixExpression, Stack<char> stack)
         {
+            var hasContent = postfixExpression.Length > 0;
+            var lastChar = hasContent ? postfixExpression.ToString().TrimEnd().Last() : '\0';
+            var isEmptyParentheses = lastChar == '(' || !hasContent;
+
+            if (isEmptyParentheses)
+                throw new ArgumentException("Пустые скобки не допускаются");
+
             while (stack.Count > 0 && stack.Peek() != '(')
                 postfixExpression.Append(stack.Pop()).Append(" ");
             stack.Pop();

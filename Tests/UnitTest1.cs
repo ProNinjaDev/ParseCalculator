@@ -32,5 +32,43 @@ namespace ParseCalculatorTests
             Assert.Equal(expected, result);
 
         }
+
+        [Theory]
+        [InlineData("2 + + 2", typeof(ArgumentException))]
+        [InlineData("2 & 3", typeof(ArgumentException))]
+
+        [InlineData("2 ** 3", typeof(ArgumentException))]
+        [InlineData("2 // 3", typeof(ArgumentException))]
+
+        [InlineData("+ 2", typeof(ArgumentException))]
+
+        [InlineData("(2 + 3", typeof(ArgumentException))]
+        [InlineData("((2 + 3)", typeof(ArgumentException))]
+
+        [InlineData("2..3", typeof(ArgumentException))]
+
+        [InlineData("2 + * 3", typeof(ArgumentException))]
+        [InlineData("2 / * 3", typeof(ArgumentException))]
+        [InlineData("* 2 + 3", typeof(ArgumentException))]
+
+        [InlineData("()", typeof(ArgumentException))]
+        [InlineData("( )", typeof(ArgumentException))]
+        public void CalculatorTest_InvalidInput_ThrowsException(string expression, Type expectedException)
+        {
+            var calculator = new ParseStringCalculatorController(expression);
+            Assert.Throws(expectedException, () => calculator.Calculate());
+        }
+
+        [Theory]
+        [InlineData("2(6 -(5 - 2)/3) / 4", "2,5")]
+        [InlineData("2(3)", "6")]
+        [InlineData("(2)(3)", "6")]
+        [InlineData("2(3 + 4)", "14")]
+        public void ImplicitMultiplicationTests(string expression, string expected)
+        {
+            var calculator = new ParseStringCalculatorController(expression);
+            var result = calculator.Calculate();
+            Assert.Equal(expected, result);
+        }
     }
 }
