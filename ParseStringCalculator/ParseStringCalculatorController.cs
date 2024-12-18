@@ -7,13 +7,11 @@ using System.Threading.Tasks;
 
 namespace ParseStringCalculator
 {
-    public class ParseStringCalculatorController (string expression)
+    public class ParseStringCalculatorController
     {
-        private string[] _expression = expression.Split();
-        private string InfixExpression = expression;
-        private string PostfixExpression;
+        private readonly string _infixExpression;
 
-        private readonly Dictionary<char, int> operationPriority = new() 
+        private readonly Dictionary<char, int> OperationPriority = new() 
         {
             { '(', 0 },
             { '+', 1 },
@@ -24,9 +22,17 @@ namespace ParseStringCalculator
             { '~', 4 }
         };
 
+        public ParseStringCalculatorController(string expression)
+        {
+            if (string.IsNullOrWhiteSpace(expression))
+                throw new ArgumentException("Выражение не может быть пустым!", nameof(expression));
+
+            _infixExpression = expression;
+        }
+
         public string Calculate()
         {
-            string postfixExpression = ToPostfix(expression + "\r");
+            string postfixExpression = ConvertToPostfix(_infixExpression + "\r");
             Stack<double> stack = new();
 
             string[] operators = postfixExpression.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -70,62 +76,84 @@ namespace ParseStringCalculator
             return stack.Pop().ToString();
         }
 
-        private string ToPostfix(string infixExpression)
+        private string ConvertToPostfix(string infixExpression)
         {
-            string postfixExpression = "";
+            StringBuilder postfixExpression = new();
             Stack<char> stack = new();
 
             for (int i = 0; i < infixExpression.Length; i++)
             {
                 char c = infixExpression[i];
 
-                if (char.IsDigit(c) || c == ',')
+                switch (c)
                 {
-                    postfixExpression += GetStringNumber(infixExpression, ref i) + " ";
-                }
-                else if (c == '(')
-                {
-                    stack.Push(c);
-                }
-                else if (c == ')')
-                {
-                    while (stack.Count > 0 && stack.Peek() != '(')
-                        postfixExpression += stack.Pop() + " ";
-                    stack.Pop();
-                }
-                else if (operationPriority.ContainsKey(c))
-                {
-                    char op = c;
-
-                    if (op == '-' && (i == 0 || (i > 1 && operationPriority.ContainsKey(infixExpression[i - 1]))))
-                        op = '~';
-
-                    while (stack.Count > 0 && operationPriority[stack.Peek()] >= operationPriority[op])
-                        postfixExpression += stack.Pop() + " ";
-                    stack.Push(op);
+                    case char digit when (char.IsDigit(digit) || digit == ','):
+                        ProcessDigitOrComma(infixExpression, postfixExpression, ref i);
+                        break;
+                    case '(':
+                        ProcessOpeningParenthesis(stack);
+                        break;
+                    case ')':
+                        ProcessClosingParenthesis(postfixExpression, stack);
+                        break;
+                    case char op when OperationPriority.ContainsKey(op):
+                        ProcessOperator(infixExpression, postfixExpression, stack, ref i, c);
+                        break;
+                    case char whiteSpace when char.IsWhiteSpace(whiteSpace):
+                        break;
+                    default:
+                        throw new ArgumentException($"Unexpected character: {c}");
                 }
             }
 
-            foreach (char op in stack)
-                postfixExpression += op + " ";
+            while (stack.Count > 0)
+                postfixExpression.Append(stack.Pop()).Append(" ");
 
-            Console.WriteLine($"Postfix Expression: {postfixExpression.Trim()}");
-            return postfixExpression.Trim();
+            return postfixExpression.ToString().Trim();
         }
 
-        private string GetStringNumber(string infixExpression, ref int i)
+        private void ProcessOperator(string infixExpression, StringBuilder postfixExpression, Stack<char> stack, ref int i, char c)
+        {
+            char operatorChar = c;
+
+            if (operatorChar == '-' && (i == 0 || (i > 1 && OperationPriority.ContainsKey(infixExpression[i - 1]))))
+                operatorChar = '~';
+
+            while (stack.Count > 0 && OperationPriority[stack.Peek()] >= OperationPriority[operatorChar])
+                postfixExpression.Append(stack.Pop()).Append(" ");
+            stack.Push(operatorChar);
+        }
+
+        private void ProcessClosingParenthesis(StringBuilder postfixExpression, Stack<char> stack)
+        {
+            while (stack.Count > 0 && stack.Peek() != '(')
+                postfixExpression.Append(stack.Pop()).Append(" ");
+            stack.Pop();
+        }
+
+        private static void ProcessOpeningParenthesis(Stack<char> stack)
+        {
+            stack.Push('(');
+        }
+
+        private void ProcessDigitOrComma(string infixExpression, StringBuilder postfixExpression, ref int i)
+        {
+            postfixExpression.Append(GetStringNumber(infixExpression, ref i)).Append(" ");
+        }
+
+        private string GetStringNumber(string expression, ref int index)
         {
             StringBuilder strNumber = new();
 
-            for (; i < infixExpression.Length; i++)
+            for (; index < expression.Length; index++)
             {
-                char num = infixExpression[i];
+                char currentChar = expression[index];
 
-                if (char.IsDigit(num) || num == ',')
-                    strNumber.Append(num);
+                if (char.IsDigit(currentChar) || currentChar == ',')
+                    strNumber.Append(currentChar);
                 else
                 {
-                    i--;
+                    index--;
                     break;
                 }
             }
